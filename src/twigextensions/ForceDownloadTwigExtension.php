@@ -14,7 +14,7 @@ use Craft;
 class ForceDownloadTwigExtension extends \Twig_Extension
 {
     public function getName()
-    {
+    {a
         return 'ForceDownload';
     }
 
@@ -83,6 +83,7 @@ class ForceDownloadTwigExtension extends \Twig_Extension
           $download->setFieldValue($downloadCounter, $download->getFieldValue($downloadCounter)+1);
           Craft::$app->elements->saveElement($download);
         }
+
         $path = $this->_getFullDirectoryPath($asset);
         $filename = $asset->filename;
         $filepath = $path . '/' . $filename;
@@ -99,9 +100,13 @@ class ForceDownloadTwigExtension extends \Twig_Extension
     {
         $volumeId = $file->volumeId;
         $volume = Craft::$app->getVolumes()->getVolumeById($volumeId);
-        if($volume->url != null)
-          return $volume->url;
-        else
-          return $volume->path;
+        if (! $volume instanceof \craft\volumes\Local) {
+            return $volume->url;
+        } else {
+            $volumePath = $file->getVolume()->settings['path'];
+            $folderPath = $file->getFolder()->path;
+
+            return  \Yii::getAlias($volumePath) . $folderPath;
+        }
     }
 }
