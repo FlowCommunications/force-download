@@ -14,7 +14,7 @@ use Craft;
 class ForceDownloadTwigExtension extends \Twig_Extension
 {
     public function getName()
-    {a
+    {
         return 'ForceDownload';
     }
 
