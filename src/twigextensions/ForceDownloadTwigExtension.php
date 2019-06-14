@@ -28,19 +28,19 @@ class ForceDownloadTwigExtension extends \Twig_Extension
     
     public function getFunctions(){
         return [
-          new \Twig_SimpleFunction("showDownloadButton", [$this, 'showDownloadButton']),
+            new \Twig_SimpleFunction("showDownloadButton", [$this, 'showDownloadButton']),
         ];
     }
     
     function showDownloadButton($id, $desc=true){
-      $formatter = Craft::$app->getFormatter();
-      if(is_numeric($id))
-        $asset = Craft::$app->elements->getElementById($id);
-      else
-        $asset = Craft::$app->elements->getElementByUri($id);
+        $formatter = Craft::$app->getFormatter();
+        if(is_numeric($id))
+            $asset = Craft::$app->elements->getElementById($id);
+        else
+            $asset = Craft::$app->elements->getElementByUri($id);
         
-      $path = $this->_getFullDirectoryPath($asset->filename[0]);
-      $output = '<br /><div class="ui grid center aligned">
+        $path = $this->_getFullDirectoryPath($asset->filename[0]);
+        $output = '<br /><div class="ui grid center aligned">
       <div class="ui raised compact segment olive" style="min-width: 70%;">
         <h3 style="text-align: center">'. $asset->filename[0]->filename .'</h3>
         <div class="ui three statistics mini">
@@ -58,44 +58,56 @@ class ForceDownloadTwigExtension extends \Twig_Extension
             </div>
         </div>';
         if($desc)
-              $output .= '<p>'. $asset->text .'</p>';
-      $output .= '<div class="ui grid center aligned"><div class="column twelve wide" style="margin: 10px;">
+            $output .= '<p>'. $asset->text .'</p>';
+        $output .= '<div class="ui grid center aligned"><div class="column twelve wide" style="margin: 10px;">
     <form method="post" action="'. $asset->url .'?checksum='. hash("sha512", $asset->filename[0]->filename) .'&do=download">
         <input type="hidden" name="'. Craft::$app->config->general->csrfTokenName .'" value="'. Craft::$app->request->csrfToken .'">
         <button id="downloadButton" class="ui labeled icon button green big">
             <i class="download icon white"></i> Herunterladen
         </button>
     </form></div></div></div></div><br />';
-    return \Craft\helpers\Template::raw($output);
-     
+        return \Craft\helpers\Template::raw($output);
+
     }
     
-    function downloadButton($raw){      
+    function downloadButton($raw){
         $raw = preg_replace_callback("/\[download\]([0-9a-z-\/]*)\[\/download\]/", function($match){
-          return $this->showDownloadButton($match[1], true);
+            return $this->showDownloadButton($match[1], true);
         }, $raw);
-        return $raw;    
+        return $raw;
     }
 
     function forceDownload($asset, $downloadCounter=null) {
+        ob_end_clean();
+
         if($downloadCounter){
-          $download = Craft::$app->urlManager->getMatchedElement();
-          $download->setFieldValue($downloadCounter, $download->getFieldValue($downloadCounter)+1);
-          Craft::$app->elements->saveElement($download);
+            $download = Craft::$app->urlManager->getMatchedElement();
+            $download->setFieldValue($downloadCounter, $download->getFieldValue($downloadCounter)+1);
+            Craft::$app->elements->saveElement($download);
         }
 
         $path = $this->_getFullDirectoryPath($asset);
         $filename = $asset->filename;
         $filepath = $path . '/' . $filename;
+
+        if (!file_exists($filepath)) {
+            ob_end_clean();
+            exit("File does not exist");
+        }
+
+        if (filesize($filepath) == 0) {
+            ob_end_clean();
+            exit("File size is 0 bytes");
+        }
+
         header('Content-type: '.$asset->getMimeType());
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Content-Transfer-Encoding: binary');
         header('Content-Length: ' . $asset->size);
         header('Accept-Ranges: bytes');
         readfile($filepath);
-        exit();
     }
-    
+
     private function _getFullDirectoryPath($file)
     {
         $volumeId = $file->volumeId;
