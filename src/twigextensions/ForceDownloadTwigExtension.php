@@ -106,6 +106,7 @@ class ForceDownloadTwigExtension extends \Twig_Extension
         header('Content-Length: ' . $asset->size);
         header('Accept-Ranges: bytes');
         readfile($filepath);
+        exit;
     }
 
     private function _getFullDirectoryPath($file)
